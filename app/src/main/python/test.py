@@ -11,10 +11,8 @@ try:
     if client.logged_in:
         print("connexion réussie")
     date_from = datetime.date(2025, 12, 19)
-    for i in client.get_recipients():
-        print(i.name)
-    infos = client.info.class_name
-    print(infos)
+    for i in client.homework(date_from):
+        print(i.subject)
 
 
 except Exception as e:
