@@ -157,7 +157,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun goToNotes() {
-        startActivity(Intent(this, NotesActivity::class.java))
+        startActivity(Intent(this, HomeActivity::class.java))
         finish()
     }
 }
