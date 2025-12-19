@@ -1,4 +1,4 @@
-package fr.algorythmice.pronotemoyenne
+package fr.algorythmice.pronotemoyenne.grades
 
 import android.content.Intent
 import android.graphics.Color
@@ -7,44 +7,56 @@ import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-import fr.algorythmice.pronotemoyenne.databinding.ActivityNotesBinding
+import fr.algorythmice.pronotemoyenne.grades.NotesCacheStorage
+import fr.algorythmice.pronotemoyenne.R
+import fr.algorythmice.pronotemoyenne.SettingsActivity
+import fr.algorythmice.pronotemoyenne.Utils
+import fr.algorythmice.pronotemoyenne.databinding.FragmentNotesBinding
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class NotesActivity : AppCompatActivity() {
+class NotesFragment : Fragment(R.layout.fragment_notes) {
 
-    private lateinit var bind: ActivityNotesBinding
-    private var updateTimerJob: kotlinx.coroutines.Job? = null
+    private var _bind: FragmentNotesBinding? = null
+    private val bind get() = _bind!!
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    private var updateTimerJob: Job? = null
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        _bind = FragmentNotesBinding.bind(view)
 
         if (!Python.isStarted()) {
-            Python.start(AndroidPlatform(this))
+            Python.start(AndroidPlatform(requireContext()))
         }
-
-        bind = ActivityNotesBinding.inflate(layoutInflater)
-        setContentView(bind.root)
 
         bind.settingsBtn.setOnClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivityForResult(intent, 100)
+            startActivity(
+                Intent(requireContext(), SettingsActivity::class.java)
+            )
         }
-
-
 
         loadNotes()
     }
 
-    private fun startUpdateTimer(lastUpdateMillis: Long) {
-        updateTimerJob?.cancel() // annule un éventuel timer précédent
+    override fun onDestroyView() {
+        super.onDestroyView()
+        updateTimerJob?.cancel()
+        _bind = null
+    }
 
-        updateTimerJob = lifecycleScope.launch {
+    private fun startUpdateTimer(lastUpdateMillis: Long) {
+        updateTimerJob?.cancel()
+
+        updateTimerJob = viewLifecycleOwner.lifecycleScope.launch {
             while (true) {
                 val diffMs = System.currentTimeMillis() - lastUpdateMillis
                 val diffMin = diffMs / 60000
@@ -63,16 +75,8 @@ class NotesActivity : AppCompatActivity() {
                 }
 
                 bind.titleText.text = "Mes Notes\n$text"
-
-                kotlinx.coroutines.delay(60000) // mise à jour toutes les minutes
+                delay(60000)
             }
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 100) {
-            loadNotes()
         }
     }
 
@@ -81,19 +85,17 @@ class NotesActivity : AppCompatActivity() {
         bind.noteText.visibility = View.GONE
         bind.notesContainer.removeAllViews()
 
-        //Affichage du cache si présent
-        val cached = NotesCacheStorage.loadNotes(this)
-        if (cached != null && cached.isNotEmpty()) {
+        val cached = NotesCacheStorage.loadNotes(requireContext())
+        if (!cached.isNullOrEmpty()) {
             displayNotesFuturistic(cached)
-            val lastUpdate = NotesCacheStorage.getLastUpdate(this)
-            startUpdateTimer(lastUpdate) // lance le timer pour le cache
+            val lastUpdate = NotesCacheStorage.getLastUpdate(requireContext())
+            startUpdateTimer(lastUpdate)
             bind.loading.visibility = View.VISIBLE
         }
 
-        //Récupération des nouvelles notes
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                Utils.fetchAndParseNotes(this@NotesActivity)
+                Utils.fetchAndParseNotes(requireContext())
             }
 
             bind.loading.visibility = View.GONE
@@ -106,11 +108,8 @@ class NotesActivity : AppCompatActivity() {
                 }
             } else {
                 displayNotesFuturistic(result.notes)
-
-                // sauvegarde du cache et mise à jour immédiate
-                NotesCacheStorage.saveNotes(this@NotesActivity, result.notes)
-                val now = System.currentTimeMillis()
-                startUpdateTimer(now) // relance le timer avec "Mis à jour maintenant"
+                NotesCacheStorage.saveNotes(requireContext(), result.notes)
+                startUpdateTimer(System.currentTimeMillis())
             }
         }
     }
@@ -120,26 +119,26 @@ class NotesActivity : AppCompatActivity() {
 
         val moyenneGenerale = Utils.computeGeneralAverage(parsed)
 
-        val generalCard = LinearLayout(this).apply {
+        val generalCard = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(25, 25, 25, 25)
-            background = getDrawable(R.drawable.bg_glass)
-            val params = LinearLayout.LayoutParams(
+            background = requireContext().getDrawable(R.drawable.bg_glass)
+            layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            params.setMargins(0, 0, 0, 30)
-            layoutParams = params
+            ).apply {
+                setMargins(0, 0, 0, 30)
+            }
         }
 
-        val generalTitle = TextView(this).apply {
+        val generalTitle = TextView(requireContext()).apply {
             text = "Moyenne Générale"
             setTextColor(Color.WHITE)
             textSize = 22f
             setTypeface(typeface, Typeface.BOLD)
         }
 
-        val generalValue = TextView(this).apply {
+        val generalValue = TextView(requireContext()).apply {
             text = "%.2f/20".format(moyenneGenerale)
             setTextColor(Color.parseColor("#00E8FF"))
             textSize = 26f
@@ -148,25 +147,22 @@ class NotesActivity : AppCompatActivity() {
 
         generalCard.addView(generalTitle)
         generalCard.addView(generalValue)
-
         bind.notesContainer.addView(generalCard)
 
         parsed.forEach { (subject, notes) ->
-            // Crée une carte
-            val card = LinearLayout(this).apply {
+            val card = LinearLayout(requireContext()).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(20, 20, 20, 20)
-                background = getDrawable(R.drawable.bg_glass)
-                val params = LinearLayout.LayoutParams(
+                background = requireContext().getDrawable(R.drawable.bg_glass)
+                layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                params.setMargins(0, 0, 0, 20)
-                layoutParams = params
+                ).apply {
+                    setMargins(0, 0, 0, 20)
+                }
             }
 
-            // Titre de la matière avec nombre de notes
-            val title = TextView(this).apply {
+            val title = TextView(requireContext()).apply {
                 text = "$subject (${notes.size} notes)"
                 setTextColor(Color.WHITE)
                 textSize = 20f
@@ -174,25 +170,25 @@ class NotesActivity : AppCompatActivity() {
             }
             card.addView(title)
 
-            // Notes
             notes.forEach { (note, coef) ->
-                val noteView = TextView(this).apply {
-                    text = "%.2f/20 (coef: %.2f)".format(note, coef)
-                    setTextColor(Color.parseColor("#E8ECF2"))
-                    textSize = 16f
-                }
-                card.addView(noteView)
+                card.addView(
+                    TextView(requireContext()).apply {
+                        text = "%.2f/20 (coef: %.2f)".format(note, coef)
+                        setTextColor(Color.parseColor("#E8ECF2"))
+                        textSize = 16f
+                    }
+                )
             }
 
-            // Moyenne
             val moyenne = notes.sumOf { it.first * it.second } / notes.sumOf { it.second }
-            val moyenneView = TextView(this).apply {
-                text = "Moyenne : %.2f/20".format(moyenne)
-                setTextColor(Color.CYAN)
-                textSize = 16f
-                setTypeface(typeface, Typeface.BOLD)
-            }
-            card.addView(moyenneView)
+            card.addView(
+                TextView(requireContext()).apply {
+                    text = "Moyenne : %.2f/20".format(moyenne)
+                    setTextColor(Color.CYAN)
+                    textSize = 16f
+                    setTypeface(typeface, Typeface.BOLD)
+                }
+            )
 
             bind.notesContainer.addView(card)
         }
