@@ -12,7 +12,10 @@ try:
         print("connexion réussie")
     date_from = datetime.date(2025, 12, 19)
     for i in client.homework(date_from):
-        print(i.subject)
+        print(i.date)
+        print(i.subject.name)
+        print(i.description)
+        print("\n")
 
 
 except Exception as e:
