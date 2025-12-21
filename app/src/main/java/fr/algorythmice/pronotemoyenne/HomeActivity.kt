@@ -7,6 +7,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import com.google.android.material.navigation.NavigationView
 import fr.algorythmice.pronotemoyenne.grades.NotesFragment
+import fr.algorythmice.pronotemoyenne.homeworks.HomeworksFragment
 import fr.algorythmice.pronotemoyenne.infos.InfosFragment
 
 class HomeActivity : AppCompatActivity() {
@@ -28,6 +29,11 @@ class HomeActivity : AppCompatActivity() {
                 R.id.nav_notes -> {
                     openFragment(NotesFragment(), "notesFragment")
                 }
+
+                R.id.nav_homework -> {
+                    openFragment(HomeworksFragment())
+                }
+
                 R.id.nav_profil -> {
                     openFragment(InfosFragment())
                 }

@@ -3,14 +3,17 @@ package fr.algorythmice.pronotemoyenne
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.google.gson.reflect.TypeToken
 import android.os.Parcelable
+import androidx.annotation.RequiresApi
 import com.chaquo.python.Python
 import fr.algorythmice.pronotemoyenne.grades.NotesCacheStorage
+import fr.algorythmice.pronotemoyenne.homeworks.HomeworksCacheStorage
 import fr.algorythmice.pronotemoyenne.infos.InfosCacheStorage
 import kotlinx.parcelize.Parcelize
 import kotlin.math.*
@@ -113,17 +116,20 @@ object Utils {
 
     data class NotesResult(
         val notes: Map<String, List<Pair<Double, Double>>>,
+        val homework: Map<String, Map<String, List<String>>> = emptyMap(),
         val error: String? = null
     )
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun fetchAndParseNotes(context: Context): NotesResult {
+
         val user = LoginStorage.getUser(context)
         val pass = LoginStorage.getPass(context)
         val ent = LoginStorage.getEnt(context)
         val pronoteUrl = LoginStorage.getUrlPronote(context)
 
         if (!isLoginComplete(user, pass, ent, pronoteUrl)) {
-            return NotesResult(emptyMap(), "Identifiants incomplets")
+            return NotesResult(emptyMap(), error = "Identifiants incomplets")
         }
 
         return try {
@@ -144,20 +150,59 @@ object Utils {
             val className = resultList[1].toString()
             val establishment = resultList[2].toString()
             val studentName = resultList[3].toString()
+            val rawHomeworks = resultList[4].toString()
 
-            val parsed = parseAndComputeNotes(rawGrades)
-            // ENREGISTREMENT DES DONNÉES
-            NotesCacheStorage.saveNotes(context, parsed)
+            val parsedNotes = parseAndComputeNotes(rawGrades)
+            val parsedHomeworks = parseHomeworks(rawHomeworks)
+
+            NotesCacheStorage.saveNotes(context, parsedNotes)
+            HomeworksCacheStorage.saveHomeworks(context, rawHomeworks)
             InfosCacheStorage.save(context, className, establishment, studentName)
 
-            NotesResult(parsed)
+            NotesResult(
+                notes = parsedNotes,
+                homework = parsedHomeworks
+            )
 
         } catch (_: Exception) {
-            NotesResult(emptyMap(), "Erreur réseau ou Pronote")
+            NotesResult(emptyMap(), error = "Erreur réseau ou Pronote")
         }
     }
 
     /* ------------------ PARSE DATA ------------------ */
+
+    fun parseHomeworks(
+        raw: String
+    ): Map<String, Map<String, List<String>>> {
+
+        val result = mutableMapOf<String, MutableMap<String, MutableList<String>>>()
+
+        var currentDate = ""
+        var currentSubject = ""
+
+        raw.lines().forEach { line ->
+            val trimmed = line.trim()
+
+            when {
+                trimmed.startsWith("Date :") -> {
+                    currentDate = trimmed.removePrefix("Date :").trim()
+                    result.putIfAbsent(currentDate, mutableMapOf())
+                }
+
+                trimmed.startsWith("Matière :") -> {
+                    currentSubject = trimmed.removePrefix("Matière :").trim()
+                    result[currentDate]?.putIfAbsent(currentSubject, mutableListOf())
+                }
+
+                trimmed.isNotEmpty() -> {
+                    result[currentDate]?.get(currentSubject)?.add(trimmed)
+                }
+            }
+        }
+
+        return result
+    }
+
 
     private fun parseAndComputeNotes(raw: String): Map<String, List<Pair<Double, Double>>> {
         val result = mutableMapOf<String, MutableList<Pair<Double, Double>>>()
@@ -200,6 +245,22 @@ object Utils {
         }
 
         return result
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun formatDateFr(dateStr: String): String {
+        return try {
+            val inputFormatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
+            val outputFormatter = java.time.format.DateTimeFormatter.ofPattern(
+                "d MMMM yyyy",
+                java.util.Locale.FRENCH
+            )
+
+            val date = java.time.LocalDate.parse(dateStr, inputFormatter)
+            date.format(outputFormatter)
+        } catch (e: Exception) {
+            dateStr // fallback si jamais la date est invalide
+        }
     }
 
     /* ------------------ COMPUTE GENERAL AVERAGE ------------------ */
