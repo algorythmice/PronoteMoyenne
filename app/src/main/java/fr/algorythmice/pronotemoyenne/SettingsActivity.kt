@@ -64,7 +64,7 @@ class SettingsActivity : AppCompatActivity() {
 
         /* ---------- Sélection établissement ---------- */
 
-        val json = Utils.loadJsonFromAssets(this, "etablissements.json")
+        val json = Utils.loadJsonFromAssets(this, "etablissements_parent.json")
         val etablissements = Utils.parseEtablissements(json)
 
         val hasLocationPermission = Utils.hasLocationPermission(this)

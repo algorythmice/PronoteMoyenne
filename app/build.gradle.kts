@@ -54,7 +54,7 @@ android {
                 install("pycryptodome >= 3.9.4")
                 install("requests >= 2.22.0")
                 install("autoslot >= 2022.12.1")
-
+                install("pycurl")
                 install("mypy")
                 install("types-requests")
                 install("types-beautifulsoup4")

@@ -38,7 +38,6 @@ from .ent import (
     lyceeconnecte_edu,
     ent_elyco,
     bordeaux,
-    # enc_hauts_de_seine,
     atrium_sud,
     laclasse_lyon,
     extranet_colleges_somme,

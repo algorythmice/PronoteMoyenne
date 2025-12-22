@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
             bind.password.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
 
 
-            val json = Utils.loadJsonFromAssets(this, "etablissements.json")
+            val json = Utils.loadJsonFromAssets(this, "etablissements_parent.json")
             val etablissements = Utils.parseEtablissements(json)
 
             val locationPermissionLauncher =
