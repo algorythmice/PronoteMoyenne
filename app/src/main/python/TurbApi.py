@@ -22,13 +22,14 @@ class TurboCache:
 
 
 class TurbApi:
-    def __init__(self, username, password):
+    def __init__(self, username, password, cookie_file):
         self.username = username
         self.password = password
+        self.cookie_file = cookie_file
         self.cache = TurboCache()
         self.curl = pycurl.Curl()
 
-        with open("cookies.txt", "w") as f:
+        with open(self.cookie_file, "w") as f:
             f.write("")
 
         self.connexion_infos = {
@@ -52,9 +53,18 @@ class TurbApi:
         self.curl.setopt(self.curl.URL, url)
         self.curl.setopt(self.curl.WRITEDATA, buffer)
         self.curl.setopt(self.curl.CAINFO, certifi.where())
-        self.curl.setopt(pycurl.COOKIEFILE, "cookies.txt")
+        self.curl.setopt(pycurl.COOKIEFILE, self.cookie_file)
         self.curl.perform()
         return buffer.getvalue().decode("utf-8")
+
+    def get_qr_payload(self) -> str:
+        html = self.get("https://espacenumerique.turbo-self.com/QrCode.aspx")
+        inp = BeautifulSoup(html, "html.parser").select_one(
+            "input#ctl00_cntForm_qrCode, input[name='ctl00$cntForm$qrCode']"
+        )
+        if not inp or not inp.get("value"):
+            raise Exception("Payload QR introuvable")
+        return inp["value"]
 
     def post(self, url: str, data: dict = None, json: dict = None, store_cookies: bool = False) -> str:
         buffer = BytesIO()
@@ -69,9 +79,9 @@ class TurbApi:
             self.curl.setopt(self.curl.POSTFIELDS, json_payload)
             self.curl.setopt(self.curl.HTTPHEADER, ['Content-Type: application/json'])
         if store_cookies:
-            self.curl.setopt(pycurl.COOKIEJAR, "cookies.txt")
+            self.curl.setopt(pycurl.COOKIEJAR, self.cookie_file)
         else:
-            self.curl.setopt(pycurl.COOKIEFILE, "cookies.txt")
+            self.curl.setopt(pycurl.COOKIEFILE, self.cookie_file)
         self.curl.perform()
         return buffer.getvalue().decode("utf-8")
 

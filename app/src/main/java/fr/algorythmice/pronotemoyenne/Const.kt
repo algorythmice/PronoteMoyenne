@@ -13,6 +13,6 @@ object EntListData {
         "neoconnect_guadeloupe", "paris_classe_numerique", "lyceeconnecte_aquitaine",
         "ent_94", "ent_hdf", "ent_somme", "ent_var", "l_normandie",
         "lyceeconnecte_edu", "ent_elyco", "bordeaux", "atrium_sud",
-        "laclasse_lyon", "extranet_colleges_somme", "ac_rennes", "monlycee"
+        "laclasse_lyon", "extranet_colleges_somme", "ac_rennes", "monlycee", "no_ent"
     )
 }

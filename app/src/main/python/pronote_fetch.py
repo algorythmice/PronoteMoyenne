@@ -6,12 +6,15 @@ from pronotepy.ent import *
 def get_notes(url, username, password, ent):
 
     # ------------ CONNECT CLIENT ------------
-    try:
-        ent_class = globals()[ent]
-    except KeyError:
-        raise ValueError(f"ENT '{ent}' inconnu")
+    if ent == "no_ent":
+        client = Client(url, username=username, password=password)
+    else:
+        try:
+            ent_class = globals()[ent]
+        except KeyError:
+            raise ValueError(f"ENT '{ent}' inconnu")
 
-    client = Client(url, username=username, password=password, ent=ent_class)
+        client = Client(url, username=username, password=password, ent=ent_class)
     period = client.current_period
 
     # ---------------- GRADES ----------------
