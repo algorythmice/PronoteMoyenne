@@ -72,9 +72,23 @@ class HomeActivity : AppCompatActivity() {
 
 
     private fun openFragment(fragment: Fragment, tag: String? = null) {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment, tag)
-            .commit()
+        val transaction = supportFragmentManager.beginTransaction()
+
+        val existingFragment = tag?.let { supportFragmentManager.findFragmentByTag(it) }
+
+        if (existingFragment != null) {
+            // Affiche le fragment existant
+            transaction.show(existingFragment)
+            if (fragment != existingFragment) {
+                transaction.hide(fragment)
+            }
+        } else {
+            transaction.add(R.id.fragmentContainer, fragment, tag)
+        }
+
+        transaction.commit()
     }
+
+
 
 }

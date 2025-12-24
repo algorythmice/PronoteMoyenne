@@ -106,7 +106,17 @@ class HomeworksFragment : Fragment(R.layout.fragment_homeworks) {
     ) {
         bind.notesContainer.removeAllViews()
 
-        parsed.forEach { (date, subjects) ->
+        // Trier les dates chronologiquement
+        val sortedDates = parsed.keys
+            .mapNotNull { dateStr ->
+                try { java.time.LocalDate.parse(dateStr) } catch (_: Exception) { null }
+            }
+            .sorted() // du plus ancien au plus récent
+            .map { it.toString() }
+
+        sortedDates.forEach { date ->
+            val subjects = parsed[date] ?: return@forEach
+
             val card = LinearLayout(requireContext()).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(25, 25, 25, 25)
