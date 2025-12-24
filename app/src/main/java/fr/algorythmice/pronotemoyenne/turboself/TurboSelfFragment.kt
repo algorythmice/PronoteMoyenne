@@ -9,6 +9,8 @@ import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.chaquo.python.Python
@@ -42,6 +44,16 @@ class TurboSelfFragment : Fragment(R.layout.fragment_turbo_self) {
         ) {
             goToTurboselfLogin()
             return
+        }
+
+        bind.menuBtn.setOnClickListener {
+            (requireActivity() as HomeActivity)
+                .findViewById<DrawerLayout>(R.id.drawerLayout)
+                .openDrawer(GravityCompat.START)
+        }
+
+        bind.settingsBtn.setOnClickListener {
+            goToTurboselfLogin()
         }
 
         if (!Python.isStarted()) {
