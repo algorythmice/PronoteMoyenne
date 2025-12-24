@@ -60,6 +60,7 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     val turboSelfLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -68,8 +69,6 @@ class HomeActivity : AppCompatActivity() {
             fragment?.refreshUIAfterLogin()
         }
     }
-
-
 
     private fun openFragment(fragment: Fragment, tag: String? = null) {
         val transaction = supportFragmentManager.beginTransaction()

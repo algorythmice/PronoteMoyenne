@@ -12,7 +12,6 @@
     <string name="rechercher_avec_la_position">rechercher avec la position</string>
     <string name="recherche_tablissement">Recherche Établissement</string>
     <string name="veuillez_remplir_les_champs">Veuillez remplir les champs</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="connexion_nturboself">Connexion\nTurboself</string>
+    <string name="return_btn">Retour</string>
 </resources>

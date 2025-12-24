@@ -82,6 +82,18 @@ android:background="@drawable/bg_gradient_futuristic">
         app:backgroundTint="@null"
         tools:ignore="TextContrastCheck,VisualLintButtonSize" />
 
+    <Button
+        android:id="@+id/returnBtn"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:layout_marginTop="35dp"
+        android:background="@drawable/btn_neon"
+        android:text="@string/return_btn"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="@null"
+        tools:ignore="TextContrastCheck,VisualLintButtonSize" />
+
     <TextView
         android:id="@+id/errorText"
         android:layout_width="wrap_content"
