@@ -1,8 +1,10 @@
 package fr.algorythmice.pronotemoyenne.turboself
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doOnTextChanged
+import fr.algorythmice.pronotemoyenne.HomeActivity
 import fr.algorythmice.pronotemoyenne.R
 import fr.algorythmice.pronotemoyenne.Utils
 import fr.algorythmice.pronotemoyenne.databinding.ActivityTurboSelfQrCodeBinding
@@ -43,6 +45,10 @@ class TurboSelfQRcode : AppCompatActivity() {
                 bind.errorText.text = getString(R.string.veuillez_remplir_les_champs)
             }
         }
+
+        bind.returnBtn.setOnClickListener {
+            goToHommeAcivity()
+        }
     }
     private fun updateLoginButtonState() {
         val user = bind.username.text.toString().trim()
@@ -59,6 +65,11 @@ class TurboSelfQRcode : AppCompatActivity() {
 
     private fun goToQRcode() {
         setResult(RESULT_OK)
+        finish()
+    }
+
+    private fun goToHommeAcivity() {
+        startActivity(Intent(this, HomeActivity::class.java))
         finish()
     }
 
