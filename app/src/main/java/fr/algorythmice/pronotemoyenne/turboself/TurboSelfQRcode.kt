@@ -54,7 +54,7 @@ class TurboSelfQRcode : AppCompatActivity() {
         val user = bind.username.text.toString().trim()
         val pass = bind.password.text.toString().trim()
 
-        val enabled = Utils.isLoginCompleteTurboSelf(
+        val enabled = Utils.isTurboSelfLoginComplete(
             user,
             pass
         )

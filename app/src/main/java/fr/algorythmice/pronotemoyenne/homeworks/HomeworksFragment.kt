@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.core.graphics.toColorInt
 import fr.algorythmice.pronotemoyenne.databinding.FragmentHomeworksBinding
+import fr.algorythmice.pronotemoyenne.pronote.PronoteUtils
 
 class HomeworksFragment : Fragment(R.layout.fragment_homeworks) {
 
@@ -59,14 +60,14 @@ class HomeworksFragment : Fragment(R.layout.fragment_homeworks) {
 
         val cachedRaw = HomeworksCacheStorage.loadHomeworks(requireContext())
         if (!cachedRaw.isNullOrEmpty()) {
-            val parsed = Utils.parseHomeworks(cachedRaw)
+            val parsed = PronoteUtils.parseHomeworks(cachedRaw)
             displayHomeworks(parsed)
             startUpdateTimer(HomeworksCacheStorage.getLastUpdate(requireContext()))
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                Utils.fetchAndParseNotes(requireContext())
+                PronoteUtils.syncPronoteData(requireContext())
             }
 
             bind.loading.visibility = View.GONE
@@ -142,7 +143,7 @@ class HomeworksFragment : Fragment(R.layout.fragment_homeworks) {
             }
 
             card.addView(TextView(requireContext()).apply {
-                text = Utils.formatDateFr(date)
+                text = Utils.formatDateFrench(date)
                 setTextColor(Color.CYAN)
                 textSize = 22f
                 setTypeface(typeface, Typeface.BOLD)

@@ -21,6 +21,7 @@ import fr.algorythmice.pronotemoyenne.R
 import fr.algorythmice.pronotemoyenne.SettingsActivity
 import fr.algorythmice.pronotemoyenne.Utils
 import fr.algorythmice.pronotemoyenne.databinding.FragmentNotesBinding
+import fr.algorythmice.pronotemoyenne.pronote.PronoteUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -115,7 +116,7 @@ class GradesFragment : Fragment(R.layout.fragment_notes) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                Utils.fetchAndParseNotes(requireContext())
+                PronoteUtils.syncPronoteData(requireContext())
             }
 
             bind.loading.visibility = View.GONE

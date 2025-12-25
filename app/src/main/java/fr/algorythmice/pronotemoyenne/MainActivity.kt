@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity() {
 
 
             val json = Utils.loadJsonFromAssets(this, "etablissements.json")
-            val etablissements = Utils.parseEtablissements(json)
+            val etablissements = Utils.parseEstablishments(json)
 
             val locationPermissionLauncher =
                 registerForActivityResult(
@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity() {
                     Utils.getLastLocation(
                         this,
                         onSuccess = { lat, lon ->
-                            val proches = Utils.etablissementsDansUnRayon(etablissements, lat, lon)
+                            val proches = Utils.getEstablishmentsWithinRadius(etablissements, lat, lon)
 
                             if (proches.isEmpty()) {
                                 Log.d("LOC", "Aucun établissement proche trouvé")

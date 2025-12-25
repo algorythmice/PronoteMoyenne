@@ -12,13 +12,7 @@ import com.google.gson.annotations.SerializedName
 import com.google.gson.reflect.TypeToken
 import android.os.Parcelable
 import androidx.annotation.RequiresApi
-import com.chaquo.python.Python
 import com.google.android.gms.location.Priority
-import fr.algorythmice.pronotemoyenne.grades.GradesCacheStorage
-import fr.algorythmice.pronotemoyenne.homeworks.HomeworksCacheStorage
-import fr.algorythmice.pronotemoyenne.infos.InfosCacheStorage
-import fr.algorythmice.pronotemoyenne.turboself.LoginTurboSelfStorage
-import fr.algorythmice.pronotemoyenne.turboself.TurboSelfCacheStorage
 import kotlinx.parcelize.Parcelize
 import kotlin.math.*
 
@@ -47,12 +41,12 @@ object Utils {
 
     /* ------------------ ETABLISSEMENTS ------------------ */
 
-    fun etablissementsDansUnRayon(
-        etablissements: List<Etablissement>,
+    fun getEstablishmentsWithinRadius(
+        etablissements: List<Establishment>,
         latitude: Double,
         longitude: Double,
         rayonKm: Double = 5.0
-    ): List<Etablissement> =
+    ): List<Establishment> =
         etablissements.filter {
             it.latitude?.let { lat ->
                 it.longitude?.let { lon ->
@@ -61,10 +55,12 @@ object Utils {
             } ?: false
         }
 
-    fun parseEtablissements(json: String): List<Etablissement> {
-        val type = object : TypeToken<List<Etablissement>>() {}.type
+    fun parseEstablishments(json: String): List<Establishment> {
+        val type = object : TypeToken<List<Establishment>>() {}.type
         return Gson().fromJson(json, type)
     }
+
+    /* ------------------ ASSETS / FILES ------------------ */
 
     fun loadJsonFromAssets(context: Context, fileName: String): String {
         return context.assets.open(fileName).bufferedReader().use { it.readText() }
@@ -138,7 +134,7 @@ object Utils {
                 && !urlPronote.isNullOrBlank()
     }
 
-    fun isLoginCompleteTurboSelf(
+    fun isTurboSelfLoginComplete(
         user: String?,
         pass: String?,
     ): Boolean {
@@ -146,182 +142,10 @@ object Utils {
                 && !pass.isNullOrBlank()
     }
 
-    /* ------------------ CALL API ------------------ */
-
-    data class NotesResult(
-        val notes: Map<String, List<Pair<Double, Double>>>,
-        val homework: Map<String, Map<String, List<String>>> = emptyMap(),
-        val error: String? = null
-    )
+    /* ------------------ DATE / FORMAT ------------------ */
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun fetchAndParseNotes(context: Context): NotesResult {
-
-        val user = LoginStorage.getUser(context)
-        val pass = LoginStorage.getPass(context)
-        val ent = LoginStorage.getEnt(context)
-        val pronoteUrl = LoginStorage.getUrlPronote(context)
-
-        if (!isLoginComplete(user, pass, ent, pronoteUrl)) {
-            return NotesResult(emptyMap(), error = "Identifiants incomplets")
-        }
-
-        return try {
-            val py = Python.getInstance()
-            val module = py.getModule("pronote_fetch")
-
-            val result = module.callAttr(
-                "get_notes",
-                pronoteUrl,
-                user,
-                pass,
-                ent
-            )
-
-            val resultList = result.asList()
-
-            val rawGrades = resultList[0].toString()
-            val className = resultList[1].toString()
-            val establishment = resultList[2].toString()
-            val studentName = resultList[3].toString()
-            val rawHomeworks = resultList[4].toString()
-
-            val parsedNotes = parseAndComputeNotes(rawGrades)
-            val parsedHomeworks = parseHomeworks(rawHomeworks)
-
-            GradesCacheStorage.saveNotes(context, parsedNotes)
-            HomeworksCacheStorage.saveHomeworks(context, rawHomeworks)
-            InfosCacheStorage.save(context, className, establishment, studentName)
-
-            NotesResult(
-                notes = parsedNotes,
-                homework = parsedHomeworks
-            )
-
-        } catch (e: Exception) {
-            NotesResult(emptyMap(), error = e.toString())
-        }
-    }
-
-    data class FetchQRcodeResult(
-        val qrcode: String = "",
-        val error: String? = null
-    )
-
-
-    fun fetchQRcode(context: Context):FetchQRcodeResult {
-        val user = LoginTurboSelfStorage.getUser(context)
-        val pass = LoginTurboSelfStorage.getPass(context)
-
-        if (!isLoginCompleteTurboSelf(user, pass)) {
-            return FetchQRcodeResult(error = "Identifiants incomplets")
-        }
-
-        return try {
-            val py = Python.getInstance()
-            val module = py.getModule("turboself_fetch")
-
-
-
-
-            val result = module.callAttr(
-                "get_qr_code",
-                user,
-                pass,
-                context.filesDir.absolutePath
-            )
-
-            TurboSelfCacheStorage.save(context, result.toString())
-
-            FetchQRcodeResult(qrcode = result.toString())
-
-
-        } catch (e: Exception) {
-            FetchQRcodeResult(error = e.toString())
-        }
-
-    }
-
-    /* ------------------ PARSE DATA ------------------ */
-
-    fun parseHomeworks(
-        raw: String
-    ): Map<String, Map<String, List<String>>> {
-
-        val result = mutableMapOf<String, MutableMap<String, MutableList<String>>>()
-
-        var currentDate = ""
-        var currentSubject = ""
-
-        raw.lines().forEach { line ->
-            val trimmed = line.trim()
-
-            when {
-                trimmed.startsWith("Date :") -> {
-                    currentDate = trimmed.removePrefix("Date :").trim()
-                    result.putIfAbsent(currentDate, mutableMapOf())
-                }
-
-                trimmed.startsWith("Matière :") -> {
-                    currentSubject = trimmed.removePrefix("Matière :").trim()
-                    result[currentDate]?.putIfAbsent(currentSubject, mutableListOf())
-                }
-
-                trimmed.isNotEmpty() -> {
-                    result[currentDate]?.get(currentSubject)?.add(trimmed)
-                }
-            }
-        }
-
-        return result
-    }
-
-
-    private fun parseAndComputeNotes(raw: String): Map<String, List<Pair<Double, Double>>> {
-        val result = mutableMapOf<String, MutableList<Pair<Double, Double>>>()
-        val lines = raw.lines()
-        var currentSubject = ""
-        var notes = mutableListOf<Pair<Double, Double>>()
-
-        for (line in lines) {
-            val trimmed = line.trim()
-
-            if (trimmed.startsWith("Matière :")) {
-                if (notes.isNotEmpty()) {
-                    result[currentSubject] = notes
-                    notes = mutableListOf()
-                }
-                currentSubject = trimmed.removePrefix("Matière :").trim()
-
-            } else if (trimmed.isNotEmpty() && !trimmed.contains("abs", true)) {
-
-                val match =
-                    Regex("""([\d.,]+)/(\d+)\s*\(coef:\s*([\d.,]+)\)""")
-                        .find(trimmed)
-
-                if (match != null) {
-                    val (noteStr, surStr, coefStr) = match.destructured
-                    val note = noteStr.replace(",", ".").toDouble()
-                    val sur = surStr.toDouble()
-                    val coef = coefStr.replace(",", ".").toDouble()
-
-                    val note20 = if (sur != 20.0) note * 20 / sur else note
-                    val coefFinal = if (sur != 20.0) coef * sur / 20 else coef
-
-                    notes.add(note20 to coefFinal)
-                }
-            }
-        }
-
-        if (notes.isNotEmpty()) {
-            result[currentSubject] = notes
-        }
-
-        return result
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun formatDateFr(dateStr: String): String {
+    fun formatDateFrench(dateStr: String): String {
         return try {
             val inputFormatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
             val outputFormatter = java.time.format.DateTimeFormatter.ofPattern(
@@ -347,9 +171,9 @@ object Utils {
 
 /* ------------------ DATA ------------------ */
 @Parcelize
-data class Etablissement(
+data class Establishment(
     @SerializedName("appellation_officielle")
-    val appellationOfficielle: String,
+    val officialName: String,
 
     @SerializedName("latitude")
     val latitude: Double? = null,
@@ -358,5 +182,5 @@ data class Etablissement(
     val longitude: Double? = null,
 
     @SerializedName("url_pronote")
-    val urlPronote: String
+    val pronoteUrl: String
 ): Parcelable
