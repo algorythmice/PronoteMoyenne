@@ -42,7 +42,7 @@ class TurboSelfQRcode : AppCompatActivity() {
                 LoginTurboSelfStorage.save(this, user, pass)
                 goToQRcode()
             } else {
-                bind.errorText.text = getString(R.string.veuillez_remplir_les_champs)
+                bind.errorText.text = getString(R.string.please_fill_in_the_fields)
             }
         }
 
@@ -54,7 +54,7 @@ class TurboSelfQRcode : AppCompatActivity() {
         val user = bind.username.text.toString().trim()
         val pass = bind.password.text.toString().trim()
 
-        val enabled = Utils.isLoginCompleteTurboSelf(
+        val enabled = Utils.isTurboSelfLoginComplete(
             user,
             pass
         )

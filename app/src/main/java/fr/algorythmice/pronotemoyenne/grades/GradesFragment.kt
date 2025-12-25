@@ -21,13 +21,14 @@ import fr.algorythmice.pronotemoyenne.R
 import fr.algorythmice.pronotemoyenne.SettingsActivity
 import fr.algorythmice.pronotemoyenne.Utils
 import fr.algorythmice.pronotemoyenne.databinding.FragmentNotesBinding
+import fr.algorythmice.pronotemoyenne.pronote.PronoteUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class NotesFragment : Fragment(R.layout.fragment_notes) {
+class GradesFragment : Fragment(R.layout.fragment_notes) {
 
     private var _bind: FragmentNotesBinding? = null
     private val bind get() = _bind!!
@@ -105,17 +106,17 @@ class NotesFragment : Fragment(R.layout.fragment_notes) {
         bind.noteText.visibility = View.GONE
         bind.notesContainer.removeAllViews()
 
-        val cached = NotesCacheStorage.loadNotes(requireContext())
+        val cached = GradesCacheStorage.loadNotes(requireContext())
         if (!cached.isNullOrEmpty()) {
             displayNotesFuturistic(cached)
-            val lastUpdate = NotesCacheStorage.getLastUpdate(requireContext())
+            val lastUpdate = GradesCacheStorage.getLastUpdate(requireContext())
             startUpdateTimer(lastUpdate)
             bind.loading.visibility = View.VISIBLE
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
-                Utils.fetchAndParseNotes(requireContext())
+                PronoteUtils.syncPronoteData(requireContext())
             }
 
             bind.loading.visibility = View.GONE
@@ -128,7 +129,7 @@ class NotesFragment : Fragment(R.layout.fragment_notes) {
                 }
             } else {
                 displayNotesFuturistic(result.notes)
-                NotesCacheStorage.saveNotes(requireContext(), result.notes)
+                GradesCacheStorage.saveNotes(requireContext(), result.notes)
                 startUpdateTimer(System.currentTimeMillis())
             }
         }

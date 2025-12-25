@@ -30,6 +30,7 @@ class TurboSelfFragment : Fragment(R.layout.fragment_turbo_self) {
     private val bind get() = _bind!!
     private var needRefreshAfterLogin = false
 
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -37,11 +38,12 @@ class TurboSelfFragment : Fragment(R.layout.fragment_turbo_self) {
 
         setupListeners()
 
-        if (!Utils.isLoginCompleteTurboSelf(
-                LoginTurboSelfStorage.getUser(requireContext()),
-                LoginTurboSelfStorage.getPass(requireContext())
-            )
-        ) {
+        val credentials = getTurboSelfCredentials()
+        val user = credentials.user
+        val pass = credentials.pass
+
+        if (!Utils.isTurboSelfLoginComplete(user, pass))
+        {
             goToTurboselfLogin()
             return
         }
@@ -87,6 +89,18 @@ class TurboSelfFragment : Fragment(R.layout.fragment_turbo_self) {
         }
     }
 
+    data class TurboSelfCredentials(
+        val user: String?,
+        val pass: String?
+    )
+
+    private fun getTurboSelfCredentials(): TurboSelfCredentials {
+        return TurboSelfCredentials(
+            user = LoginTurboSelfStorage.getUser(requireContext()),
+            pass = LoginTurboSelfStorage.getPass(requireContext())
+        )
+    }
+
 
     private fun displayQRcode() {
         bind.loading.visibility = View.VISIBLE
@@ -98,22 +112,35 @@ class TurboSelfFragment : Fragment(R.layout.fragment_turbo_self) {
             bind.qrImageView.setImageBitmap(qrCode)
         }
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) {
-                Utils.fetchQRcode(requireContext())
-            }
+        val credentials = getTurboSelfCredentials()
+        val user = credentials.user
+        val pass = credentials.pass
 
+        if (user == "demonstration" && pass == "turboself"){
             bind.loading.visibility = View.GONE
+            val qrnumber = "23497865"
+            val qrCode = generateQrCode(qrnumber)
+            bind.qrImageView.setImageBitmap(qrCode)
+        }
+        else{
 
-            if (result.error != null) {
-                bind.noteText.apply {
-                    visibility = View.VISIBLE
-                    text = result.error
-                    setTextColor(Color.RED)
+            viewLifecycleOwner.lifecycleScope.launch {
+                val result = withContext(Dispatchers.IO) {
+                    TurboselfUtils.fetchQRCode(requireContext())
                 }
-            } else {
-                val qrCode = generateQrCode(result.qrcode)
-                bind.qrImageView.setImageBitmap(qrCode)
+
+                bind.loading.visibility = View.GONE
+
+                if (result.error != null) {
+                    bind.noteText.apply {
+                        visibility = View.VISIBLE
+                        text = result.error
+                        setTextColor(Color.RED)
+                    }
+                } else {
+                    val qrCode = generateQrCode(result.qrcode)
+                    bind.qrImageView.setImageBitmap(qrCode)
+                }
             }
         }
     }

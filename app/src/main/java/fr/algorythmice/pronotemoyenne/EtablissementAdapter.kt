@@ -8,8 +8,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class EtablissementAdapter(
-    private var list: List<Etablissement>,
-    private val onItemClick: (Etablissement) -> Unit
+    private var list: List<Establishment>,
+    private val onItemClick: (Establishment) -> Unit
 ) : RecyclerView.Adapter<EtablissementAdapter.ViewHolder>() {
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -33,11 +33,11 @@ class EtablissementAdapter(
     override fun getItemCount(): Int = list.size
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.nameText.text = list[position].appellationOfficielle
+        holder.nameText.text = list[position].officialName
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    fun updateList(newList: List<Etablissement>) {
+    fun updateList(newList: List<Establishment>) {
         list = newList
         notifyDataSetChanged()
     }

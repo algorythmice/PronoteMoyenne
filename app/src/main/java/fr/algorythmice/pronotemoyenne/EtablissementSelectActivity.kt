@@ -21,8 +21,8 @@ class EtablissementSelectActivity : AppCompatActivity() {
     private lateinit var positionSearchBtn: Button
     private lateinit var titleetablissement: TextView
     private lateinit var adapter: EtablissementAdapter
-    private lateinit var allEtablissements: List<Etablissement>
-    private lateinit var etablissements: List<Etablissement>
+    private lateinit var allEtablissements: List<Establishment>
+    private lateinit var etablissements: List<Establishment>
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,13 +36,13 @@ class EtablissementSelectActivity : AppCompatActivity() {
         titleetablissement = findViewById(R.id.titleEtablissement)
 
         etablissements =
-            intent.getParcelableArrayListExtra<Etablissement>("etablissements") ?: emptyList()
+            intent.getParcelableArrayListExtra<Establishment>("etablissements") ?: emptyList()
 
         val forceManual = intent.getBooleanExtra("forceManual", false)
         val hasLocationPermission = Utils.hasLocationPermission(this)
 
-        val json = Utils.loadJsonFromAssets(this, "etablissements_parent.json")
-        allEtablissements = Utils.parseEtablissements(json)
+        val json = Utils.loadJsonFromAssets(this, "etablissements.json")
+        allEtablissements = Utils.parseEstablishments(json)
 
         // Configuration du champ de recherche
         searchInput.apply {
@@ -50,10 +50,10 @@ class EtablissementSelectActivity : AppCompatActivity() {
             imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
         }
 
-        fun showList(list: List<Etablissement>) {
+        fun showList(list: List<Establishment>) {
             recyclerView.layoutManager = LinearLayoutManager(this)
             adapter = EtablissementAdapter(list) { selected ->
-                LoginStorage.saveUrlPronote(this, selected.urlPronote)
+                LoginStorage.saveUrlPronote(this, selected.pronoteUrl)
                 Toast.makeText(this, "Établissement enregistré", Toast.LENGTH_SHORT).show()
                 finish()
             }
@@ -74,7 +74,7 @@ class EtablissementSelectActivity : AppCompatActivity() {
             }
 
             adapter = EtablissementAdapter(allEtablissements) { selected ->
-                LoginStorage.saveUrlPronote(this, selected.urlPronote)
+                LoginStorage.saveUrlPronote(this, selected.pronoteUrl)
                 Toast.makeText(this, "Établissement enregistré", Toast.LENGTH_SHORT).show()
                 finish()
             }
@@ -117,14 +117,14 @@ class EtablissementSelectActivity : AppCompatActivity() {
             searchInput.visibility = View.GONE
             manualSearchBtn.visibility = View.VISIBLE
             positionSearchBtn.visibility = View.GONE
-            titleetablissement.text = getString(R.string.tablissements_proches)
+            titleetablissement.text = getString(R.string.nearby_establishments)
             showList(etablissements)
         }
 
         // Filtrage en temps réel
         searchInput.doOnTextChanged { text, _, _, _ ->
             val filtered = allEtablissements.filter {
-                it.appellationOfficielle.contains(text.toString(), ignoreCase = true)
+                it.officialName.contains(text.toString(), ignoreCase = true)
             }
             adapter.updateList(filtered)
         }
