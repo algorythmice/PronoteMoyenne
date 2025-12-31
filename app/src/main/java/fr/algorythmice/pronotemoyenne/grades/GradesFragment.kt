@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+
 class GradesFragment : Fragment(R.layout.fragment_notes) {
 
     private var _bind: FragmentNotesBinding? = null
