@@ -14,8 +14,6 @@ import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.chaquo.python.Python
-import com.chaquo.python.android.AndroidPlatform
 import fr.algorythmice.pronotemoyenne.HomeActivity
 import fr.algorythmice.pronotemoyenne.R
 import fr.algorythmice.pronotemoyenne.SettingsActivity
@@ -40,10 +38,6 @@ class GradesFragment : Fragment(R.layout.fragment_notes) {
         super.onViewCreated(view, savedInstanceState)
 
         _bind = FragmentNotesBinding.bind(view)
-
-        if (!Python.isStarted()) {
-            Python.start(AndroidPlatform(requireContext()))
-        }
 
 
         bind.settingsBtn.setOnClickListener {

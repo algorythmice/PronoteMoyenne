@@ -1,14 +1,22 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package fr.algorythmice.pronotemoyenne.pronote
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
-import com.chaquo.python.Python
+import fr.algorythmice.pronotekt.Client
+import fr.algorythmice.pronotekt.EntFunction
+import fr.algorythmice.pronotekt.ent.*
 import fr.algorythmice.pronotemoyenne.LoginStorage
 import fr.algorythmice.pronotemoyenne.Utils.isLoginComplete
 import fr.algorythmice.pronotemoyenne.grades.GradesCacheStorage
 import fr.algorythmice.pronotemoyenne.homeworks.HomeworksCacheStorage
 import fr.algorythmice.pronotemoyenne.infos.InfosCacheStorage
+import java.time.LocalDate
+import java.util.Locale
+import kotlin.reflect.full.memberProperties
 
 object PronoteUtils {
 
@@ -18,8 +26,8 @@ object PronoteUtils {
         val homework: Map<String, Map<String, List<String>>> = emptyMap(),
         val error: String? = null
     )
-
     @RequiresApi(Build.VERSION_CODES.O)
+    @Suppress("unused")
     fun syncPronoteData(context: Context): NotesResult {
 
         val user = LoginStorage.getUser(context)
@@ -32,40 +40,70 @@ object PronoteUtils {
         }
 
         return try {
-            val py = Python.getInstance()
-            val module = py.getModule("pronote_fetch")
+            val entFunc = getEntFromString(ent)
+            val client = Client(pronoteUrl.toString(), username = user.toString(), password = pass.toString(), ent = entFunc)
+            val period = client.currentPeriod
 
-            val result = module.callAttr(
-                "get_notes",
-                pronoteUrl,
-                user,
-                pass,
-                ent
-            )
+            val gradeText = buildString {
+                period.grades.groupBy { it.subject.name }.forEach { (subject, grades) ->
+                    append("\nMatière : $subject\n")
+                    grades.forEach { g ->
+                        append("${g.grade}/${g.out_of}  (coef: ${g.coefficient})\n")
+                    }
+                }
+            }
 
-            val resultList = result.asList()
+            val homeworkText = buildString {
+                client.homework(LocalDate.now()).forEach { hw ->
+                    append("\nDate : ${hw.date}\n")
+                    append("Matière : ${hw.subject.name}\n")
+                    append(hw.description.trim()).append('\n')
+                }
+            }
 
-            val rawGrades = resultList[0].toString()
-            val className = resultList[1].toString()
-            val establishment = resultList[2].toString()
-            val studentName = resultList[3].toString()
-            val rawHomeworks = resultList[4].toString()
-
-            val parsedNotes = parseAndComputeNotes(rawGrades)
-            val parsedHomeworks = parseHomeworks(rawHomeworks)
+            val parsedNotes = parseAndComputeNotes(gradeText)
+            val parsedHomeworks = parseHomeworks(homeworkText)
 
             GradesCacheStorage.saveNotes(context, parsedNotes)
-            HomeworksCacheStorage.saveHomeworks(context, rawHomeworks)
-            InfosCacheStorage.save(context, className, establishment, studentName)
+            HomeworksCacheStorage.saveHomeworks(context, homeworkText)
+            InfosCacheStorage.save(context, client.info.class_name, client.info.establishment, client.info.name)
 
-            NotesResult(
-                notes = parsedNotes,
-                homework = parsedHomeworks
-            )
-
+            NotesResult(notes = parsedNotes, homework = parsedHomeworks)
         } catch (e: Exception) {
             NotesResult(emptyMap(), error = e.toString())
         }
+    }
+
+    private fun getEntFromString(entName: String?): EntFunction? {
+        if (entName.isNullOrBlank() || entName.equals("no_ent", ignoreCase = true)) return null
+        val normalized = entName.lowercase(Locale.ROOT)
+        val candidates = listOf(normalized, "ent_${normalized}")
+
+        fun findInEntKt(): EntFunction? {
+            return runCatching {
+                val entKt = Class.forName("fr.algorythmice.pronotekt.ent.EntKt")
+                entKt.declaredFields.firstOrNull { field ->
+                    val name = field.name.lowercase(Locale.ROOT)
+                    name in candidates && Function3::class.java.isAssignableFrom(field.type)
+                }?.let { field ->
+                    field.isAccessible = true
+                    field.get(null) as? EntFunction
+                }
+            }.getOrNull()
+        }
+
+        fun findInEntObject(): EntFunction? {
+            return runCatching {
+                Ent::class.memberProperties
+                    .firstOrNull { prop -> prop.name.lowercase(Locale.ROOT) in candidates }
+                    ?.getter
+                    ?.call(Ent) as? EntFunction
+            }.getOrNull()
+        }
+
+        val entFunc = findInEntKt() ?: findInEntObject()
+        if (entFunc == null) Log.e("PronoteUtils", "ENT '$entName' inconnu, fallback null")
+        return entFunc
     }
 
     /* ------------------ PARSE DATA ------------------ */

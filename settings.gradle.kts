@@ -21,4 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "PronoteMoyenne"
 include(":app")
- 
+include(":TurboselfAPI")
+include(":Pronotekt")

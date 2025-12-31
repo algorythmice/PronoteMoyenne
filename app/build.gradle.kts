@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.chaquopy)
     id("kotlin-parcelize")
 }
 
@@ -41,24 +40,11 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-        }
-    }
-    chaquopy {
-        defaultConfig{
-            pip{
-                install("beautifulsoup4 >= 4.8.2")
-                install("pycryptodome >= 3.9.4")
-                install("requests >= 2.22.0")
-                install("autoslot >= 2022.12.1")
-                install("pycurl")
-                install("mypy")
-                install("types-requests")
-                install("types-beautifulsoup4")
-            }
         }
     }
 }
@@ -76,4 +62,8 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.zxing.core)
     implementation(project(":TurboselfAPI"))
+    implementation(project(":Pronotekt"))
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+    implementation(libs.kotlin.reflect)
+
 }
