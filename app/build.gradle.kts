@@ -61,8 +61,8 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.gson)
     implementation(libs.zxing.core)
-    implementation(project(":TurboselfAPI"))
-    implementation(project(":Pronotekt"))
+    implementation(libs.turboself.api)
+    implementation(libs.pronotekt)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(libs.kotlin.reflect)
 

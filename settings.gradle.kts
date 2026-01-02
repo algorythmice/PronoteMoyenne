@@ -16,10 +16,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
 rootProject.name = "PronoteMoyenne"
 include(":app")
-include(":TurboselfAPI")
-include(":Pronotekt")

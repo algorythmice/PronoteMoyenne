@@ -14,6 +14,8 @@ activity = "1.12.2"
 constraintlayout = "2.2.1"
 gson = "2.13.2"
 playServicesLocation = "21.3.0"
+pronotekt = "1.0.0"
+turboselfAPI = "1.0.0"
 zxing = "3.5.4"
 ktor = "3.3.3"
 jsoup = "1.21.2"
@@ -37,6 +39,8 @@ androidx-activity = { group = "androidx.activity", name = "activity", version.re
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+pronotekt = { module = "com.github.polip3000:pronotekt", version.ref = "pronotekt" }
+turboself-api = { module = "com.github.polip3000:turboself-api", version.ref = "turboselfAPI"}
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
