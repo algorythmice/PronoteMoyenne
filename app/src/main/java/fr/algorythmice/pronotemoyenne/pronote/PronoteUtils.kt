@@ -41,7 +41,14 @@ object PronoteUtils {
 
         return try {
             val entFunc = getEntFromString(ent)
-            val client = Client(pronoteUrl.toString(), username = user.toString(), password = pass.toString(), ent = entFunc)
+
+            val client = Client(
+                pronoteUrl.toString(),
+                username = user.toString(),
+                password = pass.toString(),
+                ent = entFunc
+            )
+
             val period = client.currentPeriod
 
             val gradeText = buildString {
